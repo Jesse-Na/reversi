@@ -3,76 +3,76 @@ use std::io::Write;
 
 const UNICODE_A: u8 = 97;
 const BOARD_BLANK: char = '.';
+const PLAYER_1: char = 'B';
+const PLAYER_2: char = 'W';
 const INVALID_MOVE_ERR: &str = "Invalid move. Try again.";
 fn main() {
     let mut board = create_board();
-
-    display_board(&board);
+    let (mut black_done, mut white_done) = (false, false);
+    let mut curr_player = PLAYER_1;
 
     loop {
-        // Black's Turn
-        loop {
-            print!("Enter move for colour B (RowCol): ");
-            io::stdout().flush().expect("Failed to flush stdout.");
+        if !valid_move_exists(&board, curr_player) {
+            if curr_player == PLAYER_1 { black_done = true; }
+            else { white_done = true; }
+            println!("{} player has no valid move.", curr_player);
 
-            let mut input = String::new();
-            io::stdin().read_line(&mut input).expect("Failed to read line.");
-            let input = input.trim();
+            // Check if the game is over
+            if black_done && white_done {
+                let (black_score, white_score) = tally_score(&board);
+                display_board(&board);
 
-            match modify_board(&mut board, input, 'B') {
-                Ok(_) => break,
-                Err(_) => {
-                    println!("{}", INVALID_MOVE_ERR);
-                    display_board(&board);
+                match black_score.cmp(&white_score) {
+                    std::cmp::Ordering::Less => println!("White wins by {} points!", white_score - black_score),
+                    std::cmp::Ordering::Greater => println!("Black wins by {} points!", black_score - white_score),
+                    std::cmp::Ordering::Equal => println!("Draw!"),
                 }
+
+                break;
             }
+
+            curr_player = if curr_player == PLAYER_1 { PLAYER_2 } else { PLAYER_1 };
+            continue;
         }
 
         display_board(&board);
 
-        // White's Turn
-        loop {
-            print!("Enter move for colour W (RowCol): ");
-            io::stdout().flush().expect("Failed to flush stdout.");
+        print!("Enter move for colour {} (RowCol): ", curr_player);
+        io::stdout().flush().expect("Failed to flush stdout.");
 
-            let mut input = String::new();
-            io::stdin().read_line(&mut input).expect("Failed to read line.");
-            let input = input.trim();
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).expect("Failed to read line.");
+        let input = input.trim();
 
-            match modify_board(&mut board, input, 'W') {
-                Ok(_) => break,
-                Err(_) => {
-                    println!("{}", INVALID_MOVE_ERR);
-                    display_board(&board);
-                }
+        match modify_board(&mut board, input, curr_player) {
+            Ok(_) => (),
+            Err(_) => {
+                println!("{}", INVALID_MOVE_ERR);
+                continue;
             }
         }
 
-        display_board(&board);
-
-        // Check if the game is over
-
+        curr_player = if curr_player == PLAYER_1 { PLAYER_2 } else { PLAYER_1 };
     }
 }
 
 fn create_board() -> [[char; 8]; 8] {
     let mut board = [[BOARD_BLANK; 8]; 8];
 
-    board[3][3] = 'W';
-    board[3][4] = 'B';
-    board[4][3] = 'B';
-    board[4][4] = 'W';
+    board[3][3] = PLAYER_2;
+    board[3][4] = PLAYER_1;
+    board[4][3] = PLAYER_1;
+    board[4][4] = PLAYER_2;
 
     board
 }
 
 fn display_board(board: &[[char; 8]; 8]) {
-
     println!("  abcdefgh");
 
     for (index, &row) in board.iter().enumerate() {
         print!("{} ", char::from(index as u8 + UNICODE_A));
-        for cell in row.iter() {
+        for &cell in row.iter() {
             print!("{}", cell);
         }
         println!();
@@ -139,4 +139,59 @@ fn modify_board(board: &mut [[char; 8]; 8], user_move: &str, colour: char) -> Re
     board[row as usize][col as usize] = colour;
 
     Ok(())
+}
+
+fn valid_move_exists(board: &[[char; 8]; 8], colour: char) -> bool {
+    for row in 0..8 {
+        for col in 0..8 {
+            if board[row][col] != BOARD_BLANK {
+                continue;
+            }
+
+            for i in -1..=1 {
+                for j in -1..=1 {
+                    if i == 0 && j == 0 {
+                        continue;
+                    }
+
+                    let (mut row, mut col) = (row as i8 + i, col as i8 + j);
+                    let mut positions_to_flip: Vec<(usize, usize)> = Vec::new();
+
+                    while row >= 0 && row < 8 && col >= 0 && col < 8 {
+                        match board[row as usize][col as usize] {
+                            BOARD_BLANK => break,
+                            c if c == colour => {
+                                if !positions_to_flip.is_empty() {
+                                    return true;
+                                }
+                                break;
+                            }
+                            _ => positions_to_flip.push((row as usize, col as usize)),
+                        }
+                        row += i;
+                        col += j;
+                    }
+                }
+            }
+        }
+    }
+
+    false
+}
+
+fn tally_score(board: &[[char; 8]; 8]) -> (i32, i32) {
+    let mut black_count = 0;
+    let mut white_count = 0;
+
+    for &row in board.iter() {
+        for &cell in row.iter() {
+            match cell {
+                PLAYER_1 => black_count += 1,
+                PLAYER_2 => white_count += 1,
+                _ => (),
+            }
+        }
+    }
+
+    (black_count, white_count)
 }
