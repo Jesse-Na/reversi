@@ -13,8 +13,11 @@ fn main() {
 
     loop {
         if !valid_move_exists(&board, curr_player) {
-            if curr_player == PLAYER_1 { black_done = true; }
-            else { white_done = true; }
+            if curr_player == PLAYER_1 {
+                black_done = true;
+            } else {
+                white_done = true;
+            }
             println!("{} player has no valid move.", curr_player);
 
             // Check if the game is over
@@ -23,15 +26,23 @@ fn main() {
                 display_board(&board);
 
                 match black_score.cmp(&white_score) {
-                    std::cmp::Ordering::Less => println!("White wins by {} points!", white_score - black_score),
-                    std::cmp::Ordering::Greater => println!("Black wins by {} points!", black_score - white_score),
+                    std::cmp::Ordering::Less => {
+                        println!("White wins by {} points!", white_score - black_score)
+                    }
+                    std::cmp::Ordering::Greater => {
+                        println!("Black wins by {} points!", black_score - white_score)
+                    }
                     std::cmp::Ordering::Equal => println!("Draw!"),
                 }
 
                 break;
             }
 
-            curr_player = if curr_player == PLAYER_1 { PLAYER_2 } else { PLAYER_1 };
+            curr_player = if curr_player == PLAYER_1 {
+                PLAYER_2
+            } else {
+                PLAYER_1
+            };
             continue;
         }
 
@@ -41,7 +52,9 @@ fn main() {
         io::stdout().flush().expect("Failed to flush stdout.");
 
         let mut input = String::new();
-        io::stdin().read_line(&mut input).expect("Failed to read line.");
+        io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read line.");
         let input = input.trim();
 
         match modify_board(&mut board, input, curr_player) {
@@ -52,7 +65,11 @@ fn main() {
             }
         }
 
-        curr_player = if curr_player == PLAYER_1 { PLAYER_2 } else { PLAYER_1 };
+        curr_player = if curr_player == PLAYER_1 {
+            PLAYER_2
+        } else {
+            PLAYER_1
+        };
     }
 }
 
@@ -112,7 +129,7 @@ fn modify_board(board: &mut [[char; 8]; 8], user_move: &str, colour: char) -> Re
             }
 
             let (mut row, mut col) = (row as i8 + i, col as i8 + j);
-            let mut positions_to_flip: Vec<(usize, usize)> = Vec::new();
+            let mut positions_to_flip = Vec::new();
 
             while row >= 0 && row < 8 && col >= 0 && col < 8 {
                 match board[row as usize][col as usize] {
@@ -120,11 +137,11 @@ fn modify_board(board: &mut [[char; 8]; 8], user_move: &str, colour: char) -> Re
                     c if c == colour => {
                         for &(r, c) in &positions_to_flip {
                             valid_move = true;
-                            board[r][c] = colour;
+                            board[r as usize][c as usize] = colour;
                         }
                         break;
                     }
-                    _ => positions_to_flip.push((row as usize, col as usize)),
+                    _ => positions_to_flip.push((row, col)),
                 }
                 row += i;
                 col += j;
@@ -142,8 +159,8 @@ fn modify_board(board: &mut [[char; 8]; 8], user_move: &str, colour: char) -> Re
 }
 
 fn valid_move_exists(board: &[[char; 8]; 8], colour: char) -> bool {
-    for row in 0..8 {
-        for col in 0..8 {
+    for row in 0..board.len() {
+        for col in 0..board[row].len() {
             if board[row][col] != BOARD_BLANK {
                 continue;
             }
@@ -155,18 +172,18 @@ fn valid_move_exists(board: &[[char; 8]; 8], colour: char) -> bool {
                     }
 
                     let (mut row, mut col) = (row as i8 + i, col as i8 + j);
-                    let mut positions_to_flip: Vec<(usize, usize)> = Vec::new();
+                    let mut has_positions_to_flip = false;
 
                     while row >= 0 && row < 8 && col >= 0 && col < 8 {
                         match board[row as usize][col as usize] {
                             BOARD_BLANK => break,
                             c if c == colour => {
-                                if !positions_to_flip.is_empty() {
+                                if has_positions_to_flip {
                                     return true;
                                 }
                                 break;
                             }
-                            _ => positions_to_flip.push((row as usize, col as usize)),
+                            _ => has_positions_to_flip = true,
                         }
                         row += i;
                         col += j;
