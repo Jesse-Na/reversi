@@ -13,6 +13,7 @@ fn main() {
 
     loop {
         if !valid_move_exists(&board, curr_player) {
+            // Mark the current player as having no valid moves
             if curr_player == PLAYER_1 {
                 black_done = true;
             } else {
@@ -38,6 +39,7 @@ fn main() {
                 break;
             }
 
+            // Switch to the other player
             curr_player = if curr_player == PLAYER_1 {
                 PLAYER_2
             } else {
@@ -61,10 +63,11 @@ fn main() {
             Ok(_) => (),
             Err(_) => {
                 println!("{}", INVALID_MOVE_ERR);
-                continue;
+                continue; // Let the current player try again
             }
         }
 
+        // Switch to the other player
         curr_player = if curr_player == PLAYER_1 {
             PLAYER_2
         } else {
@@ -99,6 +102,7 @@ fn display_board(board: &[[char; 8]; 8]) {
 fn modify_board(board: &mut [[char; 8]; 8], user_move: &str, colour: char) -> Result<(), ()> {
     let mut user_moves = user_move.chars();
 
+    // Check if the user input is valid and between a-h
     let row = match user_moves.next() {
         Some(c) if (c as u8) >= UNICODE_A => (c as u8 - UNICODE_A) as usize,
         _ => return Err(()),
@@ -117,11 +121,13 @@ fn modify_board(board: &mut [[char; 8]; 8], user_move: &str, colour: char) -> Re
         return Err(());
     }
 
+    // Check if the move is valid
     if board[row as usize][col as usize] != BOARD_BLANK {
         return Err(());
     }
 
     let mut valid_move = false;
+    // Check all 8 directions for a continuous line of the opposite colour that ends with the current player's colour
     for i in -1..=1 {
         for j in -1..=1 {
             if i == 0 && j == 0 {
@@ -159,12 +165,14 @@ fn modify_board(board: &mut [[char; 8]; 8], user_move: &str, colour: char) -> Re
 }
 
 fn valid_move_exists(board: &[[char; 8]; 8], colour: char) -> bool {
+    // Cycle through all blank cells on the board
     for row in 0..board.len() {
         for col in 0..board[row].len() {
             if board[row][col] != BOARD_BLANK {
                 continue;
             }
 
+            // Check all 8 directions for a continuous line of the opposite colour that ends with the current player's colour
             for i in -1..=1 {
                 for j in -1..=1 {
                     if i == 0 && j == 0 {
