@@ -8,46 +8,9 @@ const PLAYER_2: char = 'W';
 const INVALID_MOVE_ERR: &str = "Invalid move. Try again.";
 fn main() {
     let mut board = create_board();
-    let (mut black_done, mut white_done) = (false, false);
     let mut curr_player = PLAYER_1;
 
     loop {
-        if !valid_move_exists(&board, curr_player) {
-            // Mark the current player as having no valid moves
-            if curr_player == PLAYER_1 {
-                black_done = true;
-            } else {
-                white_done = true;
-            }
-            println!("{} player has no valid move.", curr_player);
-
-            // Check if the game is over
-            if black_done && white_done {
-                let (black_score, white_score) = tally_score(&board);
-                display_board(&board);
-
-                match black_score.cmp(&white_score) {
-                    std::cmp::Ordering::Less => {
-                        println!("White wins by {} points!", white_score - black_score)
-                    }
-                    std::cmp::Ordering::Greater => {
-                        println!("Black wins by {} points!", black_score - white_score)
-                    }
-                    std::cmp::Ordering::Equal => println!("Draw!"),
-                }
-
-                break;
-            }
-
-            // Switch to the other player
-            curr_player = if curr_player == PLAYER_1 {
-                PLAYER_2
-            } else {
-                PLAYER_1
-            };
-            continue;
-        }
-
         display_board(&board);
 
         print!("Enter move for colour {} (RowCol): ", curr_player);
@@ -67,12 +30,36 @@ fn main() {
             }
         }
 
-        // Switch to the other player
-        curr_player = if curr_player == PLAYER_1 {
+        // Give control to the other player if it has valid moves.
+        // Otherwise, the current player will play again unless both players have no valid moves.
+        // In that case, the game will end.
+        let next_player = if curr_player == PLAYER_1 {
             PLAYER_2
         } else {
             PLAYER_1
         };
+
+        if valid_move_exists(&board, next_player) {
+            curr_player = next_player;
+        } else if valid_move_exists(&board, curr_player) {
+            println!("{} player has no valid move.", next_player);
+        } else {
+            // Game over
+            let (black_score, white_score) = tally_score(&board);
+            display_board(&board);
+
+            match black_score.cmp(&white_score) {
+                std::cmp::Ordering::Less => {
+                    println!("White wins by {} points!", white_score - black_score)
+                }
+                std::cmp::Ordering::Greater => {
+                    println!("Black wins by {} points!", black_score - white_score)
+                }
+                std::cmp::Ordering::Equal => println!("Draw!"),
+            }
+
+            break;
+        }
     }
 }
 
